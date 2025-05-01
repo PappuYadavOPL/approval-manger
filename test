@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# List of services with mainJobName and servicePath
+services=(
+    "hazelcast-server:/apps/services/oamplus/"
+    "oam-config-server:/apps/services/oamplus/"
+    "oam-registry:/apps/services/oamplus/"
+    "oam-plus-web-admin-deploy:/apps/services/oamplus/"
+    "oam-service-gateway:/apps/services/oamplus/"
+    "oam-service-notification:/apps/services/oamplus/"
+    "oam-service-dms:/apps/services/oamplus/"
+    "oam-service-manager-api:/apps/services/oamplus/"
+    "oam-service-analyzer:/apps/services/oamplus/"
+    "oam-service-gst:/apps/services/oamplus/"
+    "oam-service-mca:/apps/services/oamplus/"
+    "oam-service-dde-tsp:/apps/services/oamplus/"
+    "oam-service-panverification:/apps/services/oamplus/"
+    "oam-service-itr:/apps/services/oamplus/"
+    "oam-service-gcs:/apps/services/oamplus/"
+    "oam-service-cibil:/apps/services/oamplus/"
+    "oam-service-mca-probe:/apps/services/oamplus/"
+    "oam-service-cross-core:/apps/services/oamplus/"
+    "oam-service-pennydrop:/apps/services/oamplus/"
+    "oam-service-digilocker:/apps/services/oamplus/"
+    "oam-service-udyam:/apps/services/oamplus/"
+    "oam-service-bureau-equifax:/apps/services/oamplus/"
+    "oam-service-bureau-highmark:/apps/services/oamplus/"
+)
+
+# Loop through each service
+for service in "${services[@]}"; do
+    # Extract mainJobName and servicePath from the entry
+    mainJobName=$(echo $service | cut -d':' -f1)
+    servicePath=$(echo $service | cut -d':' -f2)
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    BLUE='\033[0;34m'
+    NC='\033[0m'
+
+    # Remove the existing container if it exists
+    echo -e "Removing the ${RED}$mainJobName${NC}"
+    sudo docker container rm -f $mainJobName-oamplus
+    echo -e "Deployed the ${GREEN}$mainJobName${NC} from ${BLUE}$servicePath${NC}"
+
+f [ "$1" = "oam-api-gateway" ] || [ "$1" = "oam-service-dms" ]; then
+    sudo docker run --env-file=/etc/environment -itd --network host --ulimit nofile=65536:65536 --name $mainJobName -v $servicePath/$mainJobName/nohup.out:/nohup.out -v /apps/services/sandbox/uploads:/apps/services/sandbox/uploads/ -v /apps/data/dms/:/apps/data/dms/ $mainJobName
+
+
+elif [ "$1" = "service-kcc-vendor-apis-ans" ]; then
+    sudo docker run --env-file=/etc/environment -itd --network host --ulimit nofile=65536:65536 --name $mainJobName -v $servicePath/$mainJobName/nohup.out:/nohup.out -v /apps/services/sandbox/service-kcc-vendor-apis-ans/pdfFiles:/apps/services/sandbox/service-kcc-vendor-apis-ans/pdfFiles/ -v /apps/data/dms/:/apps/data/dms/ $mainJobName
+
+else
+    sudo docker run --env-file=/etc/environment -itd --network host --ulimit nofile=65536:65536  --name $mainJobName -v $servicePath/$mainJobName/nohup.out:/nohup.out -v /apps/data/dms/:/apps/data/dms/ $mainJobName
+fi
+
+
+        echo  # This adds a blank line
+        echo  "===================================================================================="
+        echo 
+done
+sudo docker builder prune -af
